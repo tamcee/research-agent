@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Quiet digital essay reading styles */
+.claims-highlighted p {
+  position: relative;
+}
+
+/* Soft inline claim marks when highlighting is toggled */
+.claims-highlighted button[title*="Citation"] {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+.claims-highlighted span[title*="Unverified"] {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-radius: 2px;
+}
+
+.claims-highlighted span[title*="Disputed"] {
+  background-color: rgba(244, 63, 94, 0.2);
+  border-radius: 2px;
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.4);
+}
+
+/* Print optimizations for digital essay */
+@media print {
+  header,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  article {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}

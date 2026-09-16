@@ -1,0 +1,29 @@
+# --- Orchestration ---
+langgraph>=0.2.60
+langchain-core>=0.3.30
+
+# --- LLM provider (swap this + app/llm.py to change providers) ---
+langchain-groq>=0.2.0
+
+# --- Search / extraction ---
+tavily-python>=0.5.0
+trafilatura>=1.12.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+httpx>=0.27.0
+
+# --- Vector DB + local embeddings (no external account) ---
+chromadb>=0.5.20
+sentence-transformers>=3.0.0
+
+# --- Config / models ---
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# --- API (step 2) ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sse-starlette>=2.1.0
+
+# --- Utilities ---
+tenacity>=8.3.0
