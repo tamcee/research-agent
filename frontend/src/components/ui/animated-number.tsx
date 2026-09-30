@@ -33,3 +33,4 @@ export function AnimatedNumber({ value, className = "" }: AnimatedNumberProps) {
 
   return <span ref={ref} className={className}>{value}</span>;
 }
+

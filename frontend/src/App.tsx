@@ -7,7 +7,7 @@ import { SourcesDrawer } from "./components/SourcesDrawer";
 import { AnimatedRays } from "./components/ui/animated-rays";
 import { Report, StreamEvent, HealthResponse } from "./types";
 import { checkHealth, startResearch, subscribeToStream } from "./services/api";
-import { SAMPLE_REPORT, SAMPLE_EVENTS } from "./components/MockData";
+import { getSampleForTopic } from "./components/MockData";
 
 export function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -60,7 +60,7 @@ export function App() {
     };
   }, []);
 
-  // Handle starting a research run
+  // Handle starting a live research run (for user-entered queries)
   const handleStartResearch = async (searchTopic: string) => {
     setTopic(searchTopic);
     setIsLoading(true);
@@ -69,7 +69,7 @@ export function App() {
     setReport(null);
 
     try {
-      // 1. Trigger API start
+      // 1. Trigger API start on the backend
       const startRes = await startResearch(searchTopic);
 
       // 2. Subscribe to SSE stream
@@ -94,30 +94,21 @@ export function App() {
         },
       });
     } catch (apiErr: any) {
-      console.warn("Backend API unavailable, simulating preview stream:", apiErr);
-      // If backend is not running yet, provide seamless simulation with sample events
-      let currentEventIdx = 0;
-      const interval = setInterval(() => {
-        if (currentEventIdx < SAMPLE_EVENTS.length) {
-          const ev = SAMPLE_EVENTS[currentEventIdx];
-          setEvents((prev) => [...prev, ev]);
-          currentEventIdx++;
-        } else {
-          clearInterval(interval);
-          setReport({
-            ...SAMPLE_REPORT,
-            topic: searchTopic,
-          });
-          setIsLoading(false);
-        }
-      }, 700);
+      console.error("Backend error:", apiErr);
+      setError(
+        apiErr.message ||
+          "Failed to connect to Brief backend service. Please ensure the server is running."
+      );
+      setIsLoading(false);
     }
   };
 
-  const handleLoadSample = () => {
-    setTopic(SAMPLE_REPORT.topic);
-    setEvents(SAMPLE_EVENTS);
-    setReport(SAMPLE_REPORT);
+  // Handle loading a pre-synthesized sample essay when clicking suggested prompts
+  const handleSelectSample = (sampleTopic: string) => {
+    const sample = getSampleForTopic(sampleTopic);
+    setTopic(sample.report.topic);
+    setEvents(sample.events);
+    setReport(sample.report);
     setIsLoading(false);
     setError(null);
   };
@@ -139,7 +130,6 @@ export function App() {
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           health={health}
           healthError={healthError}
-          onLoadSample={handleLoadSample}
           onNewResearch={handleNewResearch}
           hasReport={Boolean(report)}
         />
@@ -148,7 +138,11 @@ export function App() {
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col justify-center">
           {/* View 1: Input Screen */}
           {!report && !isLoading && events.length === 0 && (
-            <ResearchInput onSubmit={handleStartResearch} isLoading={isLoading} />
+            <ResearchInput
+              onSubmit={handleStartResearch}
+              onSelectSample={handleSelectSample}
+              isLoading={isLoading}
+            />
           )}
 
           {/* View 2: Live Research Pipeline Stream */}

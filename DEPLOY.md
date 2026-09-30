@@ -154,3 +154,4 @@ The backend uses `sentence-transformers/all-MiniLM-L6-v2`. In `backend/Dockerfil
    - Open your frontend deployment in a web browser.
    - Confirm the backend indicator in the top right shows green ("Live" or "Fake Mode").
    - Test running a research question and verify smooth 16-event SSE progression and report rendering.
+

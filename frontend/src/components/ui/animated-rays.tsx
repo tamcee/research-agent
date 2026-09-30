@@ -43,3 +43,4 @@ export function AnimatedRays({ className = "", children }: AnimatedRaysProps) {
     </div>
   );
 }
+

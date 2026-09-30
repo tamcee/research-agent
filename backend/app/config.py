@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 class Settings(BaseSettings):
     # --- Providers ---
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "qwen/qwen3.8-27b"
     tavily_api_key: str = ""
 
     # Stub Groq + Tavily (Chroma + embeddings still run for real).

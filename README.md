@@ -20,7 +20,7 @@ Every claim is labeled **verified** (corroborated across 2+ independent domains)
 **unverified** (single source), or **disputed** (sources conflict). Wikipedia and other
 aggregators are used only as leads — never cited.
 
-## Backend quickstart
+## Backend quickstart`
 
 ```bash
 cd backend
@@ -38,6 +38,7 @@ python scripts/run_cli.py "your research question"
 First run downloads the embedding model (`all-MiniLM-L6-v2`, ~80 MB).
 
 Configuration (models, thresholds, tier lists) lives in `backend/app/config.py` and
+`backend/app/services/source_scoring.py`. Deployment steps: see `DEPLOY.md` (added in step 5).
 `backend/app/services/source_scoring.py`. Deployment steps: see [DEPLOY.md](DEPLOY.md).
 
 ## Frontend quickstart

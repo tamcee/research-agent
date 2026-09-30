@@ -8,6 +8,7 @@ export interface Citation {
   title: string;
   domain: string;
   tier: SourceTier;
+  snippet?: string;
 }
 
 export interface Report {
@@ -104,3 +105,4 @@ export interface GetRunResponse {
   report: Report | null;
   events: StreamEvent[];
 }
+

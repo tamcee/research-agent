@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon, Sparkles, BookOpen, Activity } from "lucide-react";
+import { Sun, Moon, BookOpen, Activity } from "lucide-react";
 import { HealthResponse } from "../types";
 import { Badge } from "./ui/badge";
 
@@ -8,7 +8,6 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
   health: HealthResponse | null;
   healthError: boolean;
-  onLoadSample: () => void;
   onNewResearch: () => void;
   hasReport: boolean;
 }
@@ -18,7 +17,6 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
   health,
   healthError,
-  onLoadSample,
   onNewResearch,
   hasReport,
 }) => {
@@ -31,11 +29,11 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2.5 text-left group focus:outline-none"
         >
           <div className="w-7 h-7 rounded-md bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 flex items-center justify-center font-serif text-sm font-semibold shadow-sm group-hover:scale-105 transition-transform">
-            R
+            B
           </div>
           <div className="flex flex-col">
             <span className="font-serif text-base font-medium tracking-tight text-stone-900 dark:text-stone-100">
-              Research Agent
+              Brief
             </span>
           </div>
         </button>
@@ -51,25 +49,13 @@ export const Header: React.FC<HeaderProps> = ({
           ) : health ? (
             <Badge variant="outline" size="sm" className="hidden sm:inline-flex border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
-              {health.fake_mode ? "Fake Mode (No Keys)" : "Live (Llama 3.3)"}
+              {health.fake_mode ? "Fake Mode (No Keys)" : `Live (${health.model.split("/").pop()})`}
             </Badge>
           ) : (
             <Badge variant="outline" size="sm" className="hidden sm:inline-flex text-stone-400">
               <Activity className="w-3 h-3 mr-1 animate-spin" />
               Checking...
             </Badge>
-          )}
-
-          {/* Quick Sample Button */}
-          {!hasReport && (
-            <button
-              onClick={onLoadSample}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/50 dark:hover:bg-stone-800/50 rounded-md transition-colors"
-              title="Load a pre-synthesized sample essay"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span className="hidden xs:inline">Sample Essay</span>
-            </button>
           )}
 
           {hasReport && (
