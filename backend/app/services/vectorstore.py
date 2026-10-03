@@ -15,10 +15,12 @@ from app.schemas import Claim
 
 class VectorStore:
     def __init__(self) -> None:
+        import os
         import chromadb
 
         from app.services.embeddings import get_embedding_function
 
+        os.makedirs(settings.chroma_dir, exist_ok=True)
         self._client = chromadb.PersistentClient(path=settings.chroma_dir)
         self._col = self._client.get_or_create_collection(
             name="claims",

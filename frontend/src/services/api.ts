@@ -1,43 +1,36 @@
 import { HealthResponse, StartRunResponse, GetRunResponse, StreamEvent } from '../types';
 
-// Read API base URL from Vite environment variable (e.g. deployed backend URL)
-// or fallback to empty string (which uses Vite proxy / relative path in development)
-const rawBase = import.meta.env.VITE_API_BASE_URL || '';
-export const API_BASE_URL = rawBase.replace(/\/+$/, '');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function checkHealth(): Promise<HealthResponse> {
-  const url = `${API_BASE_URL}/health`;
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE_URL}/health`, {
     headers: { Accept: 'application/json' },
   });
   if (!res.ok) {
-    throw new Error(`Health check failed: ${res.status} ${res.statusText}`);
+    throw new Error(`Health check failed: ${res.statusText}`);
   }
   return res.json();
 }
 
 export async function startResearch(topic: string): Promise<StartRunResponse> {
-  const url = `${API_BASE_URL}/api/research`;
-  console.log(`[Brief API] POST ${url}`, { topic });
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE_URL}/api/research`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ topic }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: `${res.status} ${res.statusText}` }));
-    throw new Error(err.detail || `Server error: ${res.status} ${res.statusText}`);
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to start research run');
   }
   return res.json();
 }
 
 export async function getResearchRun(runId: string): Promise<GetRunResponse> {
-  const url = `${API_BASE_URL}/api/research/${runId}`;
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE_URL}/api/research/${runId}`, {
     headers: { Accept: 'application/json' },
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch run: ${res.status} ${res.statusText}`);
+    throw new Error(`Failed to fetch run: ${res.statusText}`);
   }
   return res.json();
 }
@@ -50,7 +43,6 @@ export interface StreamCallbacks {
 
 export function subscribeToStream(runId: string, callbacks: StreamCallbacks): () => void {
   const url = `${API_BASE_URL}/api/research/${runId}/stream`;
-  console.log(`[Brief API] Subscribing to SSE: ${url}`);
   const es = new EventSource(url);
 
   es.onmessage = (messageEvent) => {
@@ -68,16 +60,13 @@ export function subscribeToStream(runId: string, callbacks: StreamCallbacks): ()
   };
 
   es.onerror = (err) => {
-    // Check if EventSource was gracefully closed
+    // Note: SSE close triggers error event in browsers, so check readyState
     if (es.readyState === EventSource.CLOSED) {
       if (callbacks.onDone) callbacks.onDone();
       return;
     }
-    console.error(`[Brief API] SSE connection error on ${url}:`, err);
     if (callbacks.onError) {
-      callbacks.onError(
-        new Error(`SSE connection failed to ${url}. Verify backend server is running and accessible.`)
-      );
+      callbacks.onError(err);
     }
     es.close();
   };
@@ -86,3 +75,4 @@ export function subscribeToStream(runId: string, callbacks: StreamCallbacks): ()
     es.close();
   };
 }
+

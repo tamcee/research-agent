@@ -1,3 +1,13 @@
+---
+title: Research Agent Backend
+emoji: 📑
+colorFrom: amber
+colorTo: stone
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Research-to-Report Agent
 
 An autonomous research pipeline: give it a question, and a graph of agents plans

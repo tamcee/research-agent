@@ -15,16 +15,16 @@ ENV HOME=/home/user \
 
 WORKDIR $HOME/app
 
-# Install python dependencies
-COPY --chown=user:user requirements.txt .
+# Install python dependencies from backend/requirements.txt
+COPY --chown=user:user backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Pre-download local embedding model so runtime startup is instant
 RUN python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # Copy backend source code
-COPY --chown=user:user app/ ./app/
-COPY --chown=user:user scripts/ ./scripts/
+COPY --chown=user:user backend/app/ ./app/
+COPY --chown=user:user backend/scripts/ ./scripts/
 
 # Create data directory for Chroma vectors
 RUN mkdir -p $HOME/app/data/chroma && chown -R user:user $HOME/app/data

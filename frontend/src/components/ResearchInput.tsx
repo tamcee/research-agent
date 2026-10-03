@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowRight, History, X, AlertCircle } from "lucide-react";
+import { ArrowRight, History, X } from "lucide-react";
 import { AnimatedButton } from "./ui/animated-button";
 
 interface ResearchInputProps {
   onSubmit: (topic: string) => void;
+  onSelectSample: (topic: string) => void;
   isLoading: boolean;
-  error?: string | null;
-  onClearError?: () => void;
 }
 
 const DEFAULT_RECENT = [
@@ -25,9 +24,8 @@ const RECENT_SEARCHES_KEY = "brief_recent_searches";
 
 export const ResearchInput: React.FC<ResearchInputProps> = ({
   onSubmit,
+  onSelectSample,
   isLoading,
-  error,
-  onClearError,
 }) => {
   const [topic, setTopic] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -119,12 +117,6 @@ export const ResearchInput: React.FC<ResearchInputProps> = ({
     }
   };
 
-  const handleSelectSuggestion = (suggestion: string) => {
-    setTopic(suggestion);
-    saveRecentSearch(suggestion);
-    onSubmit(suggestion);
-  };
-
   return (
     <div className="w-full max-w-2xl mx-auto py-12 sm:py-16 text-center animate-fade-in">
       {/* Editorial Title */}
@@ -142,40 +134,8 @@ export const ResearchInput: React.FC<ResearchInputProps> = ({
         </p>
       </div>
 
-      {/* Visible Error Banner if Backend Call Failed */}
-      {error && (
-        <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-left max-w-xl mx-auto shadow-sm animate-in fade-in">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-rose-900 dark:text-rose-200">
-                  Backend Request Failed
-                </h4>
-                <p className="text-xs text-rose-700 dark:text-rose-300 font-mono break-all leading-relaxed">
-                  {error}
-                </p>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400 pt-1">
-                  Make sure your FastAPI server is online and reachable from the frontend.
-                </p>
-              </div>
-            </div>
-            {onClearError && (
-              <button
-                type="button"
-                onClick={onClearError}
-                className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 p-1 shrink-0 transition-colors"
-                title="Dismiss"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Input Form with Recent Searches Dropdown */}
-      <div ref={containerRef} className="relative mt-4 max-w-xl mx-auto text-left">
+      <div ref={containerRef} className="relative mt-8 max-w-xl mx-auto text-left">
         <form onSubmit={handleSubmit} className="relative">
           <div className="relative flex items-center rounded-2xl bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all focus-within:border-stone-400 dark:focus-within:border-stone-600 focus-within:ring-4 focus-within:ring-amber-500/10 p-2">
             <input
@@ -239,7 +199,7 @@ export const ResearchInput: React.FC<ResearchInputProps> = ({
         )}
       </div>
 
-      {/* Suggested Topics under "IDEAS" - triggers live research on click */}
+      {/* Suggested Topics as Samples under "IDEAS" */}
       <div className="mt-8 pt-6 border-t border-stone-200/60 dark:border-stone-800/60 max-w-xl mx-auto text-left">
         <div className="text-xs text-stone-400 dark:text-stone-500 mb-3 font-semibold tracking-wider uppercase">
           Ideas
@@ -249,9 +209,11 @@ export const ResearchInput: React.FC<ResearchInputProps> = ({
             <button
               key={suggestion}
               type="button"
-              onClick={() => handleSelectSuggestion(suggestion)}
-              disabled={isLoading}
-              className="text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 bg-stone-100/80 dark:bg-stone-800/60 hover:bg-stone-200/70 dark:hover:bg-stone-700/60 px-3 py-1.5 rounded-lg text-left transition-colors border border-stone-200/40 dark:border-stone-700/40 disabled:opacity-50"
+              onClick={() => {
+                setTopic(suggestion);
+                onSelectSample(suggestion);
+              }}
+              className="text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 bg-stone-100/80 dark:bg-stone-800/60 hover:bg-stone-200/70 dark:hover:bg-stone-700/60 px-3 py-1.5 rounded-lg text-left transition-colors border border-stone-200/40 dark:border-stone-700/40"
             >
               {suggestion}
             </button>
