@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     chroma_dir: str = str(BASE_DIR / "data" / "chroma")
 
     # --- API ---
-    allowed_origins: str = "*"
+    allowed_origins: str = "http://localhost:5173"
 
     # --- Pipeline knobs ---
     min_sub_questions: int = 3

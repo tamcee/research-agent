@@ -2,7 +2,7 @@
 
 One process, no DB (v1). Each run keeps its full event trace and final report in
 memory. SSE subscribers get the buffered trace replayed on connect, then live events
-— so a client that connects late (container cold start, a refresh) sees the
+— so a client that connects late (Render free-tier cold start, a refresh) sees the
 whole run. Replay + registration happen in one synchronous section, so in asyncio's
 single thread no event is dropped or duplicated between them.
 """

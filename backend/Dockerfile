@@ -1,37 +1,29 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
-# System dependencies
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up non-root user with UID 1000 (required for Hugging Face Spaces security sandbox)
-RUN useradd -m -u 1000 user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH \
-    HF_HOME=/home/user/.cache/huggingface \
-    PYTHONUNBUFFERED=1
-
-WORKDIR $HOME/app
-
 # Install python dependencies
-COPY --chown=user:user requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download local embedding model so runtime startup is instant
-RUN python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+# Pre-download local embedding model so startup is instant
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # Copy backend source code
-COPY --chown=user:user app/ ./app/
-COPY --chown=user:user scripts/ ./scripts/
+COPY app/ ./app/
+COPY scripts/ ./scripts/
 
-# Create data directory for Chroma vectors
-RUN mkdir -p $HOME/app/data/chroma && chown -R user:user $HOME/app/data
+# Create data directory for Chroma
+RUN mkdir -p /app/data/chroma
 
-USER user
+ENV PORT=8000
+EXPOSE 8000
 
-# Hugging Face Spaces listens on port 7860
-EXPOSE 7860
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
