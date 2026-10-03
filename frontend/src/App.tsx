@@ -6,8 +6,7 @@ import { EssayReader } from "./components/EssayReader";
 import { SourcesDrawer } from "./components/SourcesDrawer";
 import { AnimatedRays } from "./components/ui/animated-rays";
 import { Report, StreamEvent, HealthResponse } from "./types";
-import { checkHealth, startResearch, subscribeToStream } from "./services/api";
-import { getSampleForTopic } from "./components/MockData";
+import { checkHealth, startResearch, subscribeToStream, API_BASE_URL } from "./services/api";
 
 export function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -50,7 +49,8 @@ export function App() {
           setHealthError(false);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn("Backend health check failed:", err);
         if (mounted) {
           setHealthError(true);
         }
@@ -60,19 +60,31 @@ export function App() {
     };
   }, []);
 
-  // Handle starting a live research run (for user-entered queries)
+  // Handle starting a live research run
   const handleStartResearch = async (searchTopic: string) => {
-    setTopic(searchTopic);
+    const trimmed = searchTopic.trim();
+    if (!trimmed) return;
+
+    setTopic(trimmed);
     setIsLoading(true);
     setError(null);
     setEvents([]);
     setReport(null);
 
-    try {
-      // 1. Trigger API start on the backend
-      const startRes = await startResearch(searchTopic);
+    const targetEndpoint = API_BASE_URL
+      ? API_BASE_URL
+      : typeof window !== "undefined"
+      ? window.location.origin
+      : "";
 
-      // 2. Subscribe to SSE stream
+    console.log(`[Brief] Dispatching research run to backend (${targetEndpoint}):`, trimmed);
+
+    try {
+      // 1. Trigger API start on the backend (POST /api/research)
+      const startRes = await startResearch(trimmed);
+      console.log(`[Brief] Run started successfully. run_id:`, startRes.run_id);
+
+      // 2. Subscribe to live SSE stream (GET /api/research/{run_id}/stream)
       subscribeToStream(startRes.run_id, {
         onEvent: (ev) => {
           setEvents((prev) => [...prev, ev]);
@@ -80,13 +92,16 @@ export function App() {
             setReport(ev.data.report);
             setIsLoading(false);
           } else if (ev.type === "error") {
-            setError(ev.message || "An error occurred during research.");
+            setError(ev.message || "An error occurred during research execution.");
             setIsLoading(false);
           }
         },
-        onError: (err) => {
-          console.error("Stream error:", err);
-          setError("Connection to pipeline stream was interrupted.");
+        onError: (err: any) => {
+          console.error("[Brief] Stream connection failed:", err);
+          setError(
+            err?.message ||
+              `Stream connection to ${targetEndpoint}/api/research/${startRes.run_id}/stream failed.`
+          );
           setIsLoading(false);
         },
         onDone: () => {
@@ -94,23 +109,13 @@ export function App() {
         },
       });
     } catch (apiErr: any) {
-      console.error("Backend error:", apiErr);
+      console.error("[Brief] Failed to initiate research run:", apiErr);
+      const detail = apiErr?.message || "Failed to connect to backend.";
       setError(
-        apiErr.message ||
-          "Failed to connect to Brief backend service. Please ensure the server is running."
+        `${detail} (Target: ${targetEndpoint}/api/research). Ensure your FastAPI backend server is running and accessible.`
       );
       setIsLoading(false);
     }
-  };
-
-  // Handle loading a pre-synthesized sample essay when clicking suggested prompts
-  const handleSelectSample = (sampleTopic: string) => {
-    const sample = getSampleForTopic(sampleTopic);
-    setTopic(sample.report.topic);
-    setEvents(sample.events);
-    setReport(sample.report);
-    setIsLoading(false);
-    setError(null);
   };
 
   const handleNewResearch = () => {
@@ -136,26 +141,28 @@ export function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 flex flex-col justify-center">
-          {/* View 1: Input Screen */}
+          {/* View 1: Input Screen (displayed when not loading, no report, and no events yet) */}
           {!report && !isLoading && events.length === 0 && (
             <ResearchInput
               onSubmit={handleStartResearch}
-              onSelectSample={handleSelectSample}
               isLoading={isLoading}
+              error={error}
+              onClearError={() => setError(null)}
             />
           )}
 
           {/* View 2: Live Research Pipeline Stream */}
-          {(isLoading || (!report && events.length > 0)) && (
+          {(isLoading || (!report && (events.length > 0 || Boolean(error)))) && (
             <PipelineStream
               events={events}
               isComplete={Boolean(report)}
               error={error}
               topic={topic}
+              onReset={handleNewResearch}
             />
           )}
 
-          {/* View 3: Quiet Digital Essay Reader */}
+          {/* View 3: Digital Essay Reader */}
           {report && (
             <EssayReader
               report={report}

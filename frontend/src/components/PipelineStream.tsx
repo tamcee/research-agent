@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   GitFork,
   ArrowDownCircle,
+  RotateCcw,
 } from "lucide-react";
 import { StreamEvent, EventType } from "../types";
 import { Badge } from "./ui/badge";
@@ -21,6 +22,7 @@ interface PipelineStreamProps {
   isComplete: boolean;
   error?: string | null;
   topic: string;
+  onReset?: () => void;
 }
 
 const EVENT_ICONS: Record<EventType, React.ReactNode> = {
@@ -47,6 +49,7 @@ export const PipelineStream: React.FC<PipelineStreamProps> = ({
   isComplete,
   error,
   topic,
+  onReset,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +65,7 @@ export const PipelineStream: React.FC<PipelineStreamProps> = ({
   const subQuestions: Array<{ question: string }> =
     planEvent?.data?.sub_questions || [];
 
-  // Count claims live
+  // Count claims live from real streamed events
   const verifiedCount = events.filter(
     (e) => e.type === "corroboration" && e.data?.status === "verified"
   ).length;
@@ -103,36 +106,62 @@ export const PipelineStream: React.FC<PipelineStreamProps> = ({
           </div>
 
           <div className="shrink-0 flex items-center gap-2">
-            <Badge variant={isComplete ? "verified" : "default"} size="sm">
-              {isComplete ? "Complete" : "Pipeline Active"}
+            <Badge
+              variant={isComplete ? "verified" : error ? "disputed" : "default"}
+              size="sm"
+            >
+              {isComplete ? "Complete" : error ? "Failed" : "Pipeline Active"}
             </Badge>
           </div>
         </div>
 
-        {/* Live Counters */}
+        {/* Live Counters - reflect actual streamed numbers without hardcoded fallbacks */}
         <div className="grid grid-cols-3 gap-3 pt-4 text-center">
           <div className="p-3 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-100 dark:border-stone-800">
             <div className="text-xs text-stone-400 dark:text-stone-500 mb-1">Sub-questions</div>
             <div className="text-lg font-semibold text-stone-800 dark:text-stone-200">
-              <AnimatedNumber value={subQuestions.length || 4} />
+              <AnimatedNumber value={subQuestions.length} />
             </div>
           </div>
           <div className="p-3 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-100 dark:border-stone-800">
             <div className="text-xs text-stone-400 dark:text-stone-500 mb-1">Authoritative Sources</div>
             <div className="text-lg font-semibold text-stone-800 dark:text-stone-200">
-              <AnimatedNumber value={sourcesSelected || 3} />
+              <AnimatedNumber value={sourcesSelected} />
             </div>
           </div>
           <div className="p-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
             <div className="text-xs text-emerald-700 dark:text-emerald-400 mb-1">Corroborated Claims</div>
             <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">
-              <AnimatedNumber value={verifiedCount || 24} />
+              <AnimatedNumber value={verifiedCount} />
             </div>
           </div>
         </div>
 
+        {/* Visible error state if pipeline was interrupted */}
+        {error && (
+          <div className="mt-4 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-200 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+            <div className="space-y-1 flex-1">
+              <span className="font-semibold block">Execution Failed</span>
+              <span className="font-mono text-[11px] block break-all text-rose-600 dark:text-rose-300">
+                {error}
+              </span>
+            </div>
+            {onReset && (
+              <button
+                type="button"
+                onClick={onReset}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900 dark:hover:bg-rose-800 dark:text-rose-100 shrink-0 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Retry
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Current status prompt */}
-        {lastEvent && !isComplete && (
+        {lastEvent && !isComplete && !error && (
           <div className="mt-4 px-3.5 py-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/30 border border-stone-200/50 dark:border-stone-800 flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300 animate-fade-in">
             {EVENT_ICONS[lastEvent.type] || <Sparkles className="w-3.5 h-3.5" />}
             <span className="font-mono text-[11px] text-stone-400">{lastEvent.type}</span>
@@ -167,29 +196,34 @@ export const PipelineStream: React.FC<PipelineStreamProps> = ({
       <AccordionItem
         title="Live Pipeline Trace"
         subtitle={`${events.length} streamed events (LangGraph + Chroma)`}
-        defaultOpen={false}
+        defaultOpen={Boolean(error) || events.length > 0}
       >
         <div
           ref={scrollRef}
           className="max-h-60 overflow-y-auto space-y-1.5 font-mono text-[11px] text-stone-600 dark:text-stone-400 pr-1"
         >
-          {events.map((ev, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-2 py-0.5 border-b border-stone-100/50 dark:border-stone-800/30"
-            >
-              <span className="text-stone-400 shrink-0">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className="font-semibold text-stone-700 dark:text-stone-300 shrink-0">
-                [{ev.type}]
-              </span>
-              <span className="truncate flex-1">{ev.message}</span>
+          {events.length === 0 ? (
+            <div className="text-stone-400 py-2 italic text-center">
+              Waiting for initial event from LangGraph runtime...
             </div>
-          ))}
+          ) : (
+            events.map((ev, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-2 py-0.5 border-b border-stone-100/50 dark:border-stone-800/30"
+              >
+                <span className="text-stone-400 shrink-0">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="font-semibold text-stone-700 dark:text-stone-300 shrink-0">
+                  [{ev.type}]
+                </span>
+                <span className="truncate flex-1">{ev.message}</span>
+              </div>
+            ))
+          )}
         </div>
       </AccordionItem>
     </div>
   );
 };
-
